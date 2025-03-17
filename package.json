@@ -1,0 +1,39 @@
+{
+  "name": "searxng-mcp",
+  "version": "0.0.1",
+  "description": "SearxNG MCP Server",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node dist/index.js",
+    "dev": "dotenvx run --env-file=.env.local -- cross-env NODE_ENV=development tsx src/index.ts",
+    "build": "tsc",
+    "watch": "tsc -w",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "typescript",
+    "node"
+  ],
+  "author": "zac",
+  "license": "ISC",
+  "devDependencies": {
+    "@eslint/js": "^8.56.0",
+    "@types/node": "^22.13.10",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "cross-env": "^7.0.3",
+    "eslint": "^8.56.0",
+    "nodemon": "^3.1.9",
+    "tsx": "^4.19.3",
+    "typescript": "^5.3.3",
+    "typescript-eslint": "^7.0.0"
+  },
+  "dependencies": {
+    "@dotenvx/dotenvx": "^1.38.5",
+    "@modelcontextprotocol/sdk": "^1.7.0",
+    "ts-node": "^10.9.2"
+  }
+}
