@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 "use strict";
 var __create = Object.create;
 var __defProp = Object.defineProperty;
@@ -142,6 +143,8 @@ async function tavilySearch(query, options) {
 
 // src/index.ts
 var import_stdio = require("@modelcontextprotocol/sdk/server/stdio.js");
+var import_dotenvx = __toESM(require("@dotenvx/dotenvx"), 1);
+import_dotenvx.default.config();
 var SEARCH_TOOL = {
   name: "one_search",
   description: "Search and retrieve content from web pages. Returns SERP results by default (url, title, description).",

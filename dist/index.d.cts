@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 interface IMediaItem {
     thumbnail?: string;
     src?: string;

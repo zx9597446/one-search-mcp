@@ -1,11 +1,13 @@
+#!/usr/bin/env node
+
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import  { CallToolRequestSchema, ListToolsRequestSchema, Tool } from '@modelcontextprotocol/sdk/types.js';
 import { ISearchRequestOptions, ISearchResponse, Provider } from './interface.js';
 import { searxngSearch, tavilySearch } from './search.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import dotenvx from '@dotenvx/dotenvx';
 
-// export types
-export * from './interface.js';
+dotenvx.config();
 
 // tools definition
 const SEARCH_TOOL: Tool = {
@@ -419,3 +421,6 @@ runServer().catch((error) => {
   process.stderr.write(`Error running server: ${msg}\n`);
   process.exit(1);
 });
+
+// export types
+export * from './interface.js';

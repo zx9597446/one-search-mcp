@@ -1,6 +1,6 @@
 {
   "name": "one-search-mcp",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "One Search MCP Server, Web Search & Crawl & Scraper & Extract, support SearXNG, Firecrawl, Tavily, etc.",
   "private": false,
   "type": "module",
@@ -25,17 +25,25 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "bin": {
+    "one-search-mcp": "dist/index.js"
+  },
   "files": [
     "dist/**"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "engines": {
     "node": ">=20.0.0"
   },
   "scripts": {
     "dev": "dotenvx run --env-file=.env -- cross-env NODE_ENV=development tsx src/index.ts",
-    "build": "tsup",
+    "build": "tsup && node -e \"require('fs').chmodSync('dist/index.js', '755')\"",
+    "start": "node dist/index.js",
     "lint": "eslint src",
-    "lint:fix": "eslint src --fix"
+    "lint:fix": "eslint src --fix",
+    "publish": "npm run build && npm publish --registry=https://registry.npmjs.org/"
   },
   "tsup": {
     "entry": [

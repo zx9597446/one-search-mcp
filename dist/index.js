@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 // src/index.ts
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
@@ -115,6 +117,8 @@ async function tavilySearch(query, options) {
 
 // src/index.ts
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import dotenvx from "@dotenvx/dotenvx";
+dotenvx.config();
 var SEARCH_TOOL = {
   name: "one_search",
   description: "Search and retrieve content from web pages. Returns SERP results by default (url, title, description).",
