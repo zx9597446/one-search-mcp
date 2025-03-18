@@ -1,24 +1,62 @@
 {
-  "name": "searxng-mcp",
-  "version": "0.0.1",
-  "description": "SearxNG MCP Server",
-  "main": "dist/index.js",
+  "name": "one-search-mcp",
+  "version": "1.0.0",
+  "description": "One Search MCP Server, Web Search & Crawl & Scraper & Extract, support SearXNG, Firecrawl, Tavily, etc.",
+  "private": false,
   "type": "module",
-  "scripts": {
-    "start": "node dist/index.js",
-    "dev": "dotenvx run --env-file=.env.local -- cross-env NODE_ENV=development tsx src/index.ts",
-    "build": "tsc",
-    "watch": "tsc -w",
-    "lint": "eslint src",
-    "lint:fix": "eslint src --fix",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "keywords": [
-    "typescript",
-    "node"
+    "AI",
+    "LLM",
+    "MCP",
+    "ModelContextProtocol",
+    "SearXNG MCP Server",
+    "Firecrawl MCP Server",
+    "Search MCP Server",
+    "Web Search",
+    "LLM Tool",
+    "One Search"
   ],
-  "author": "zac",
-  "license": "ISC",
+  "author": "zac.ma",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yokingma/one-search-mcp.git"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist/**"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "dev": "dotenvx run --env-file=.env -- cross-env NODE_ENV=development tsx src/index.ts",
+    "build": "tsup",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix"
+  },
+  "tsup": {
+    "entry": [
+      "src/index.ts"
+    ],
+    "outDir": "dist",
+    "format": [
+      "cjs",
+      "esm"
+    ],
+    "splitting": false,
+    "dts": true,
+    "clean": true,
+    "sourcemap": true
+  },
+  "exports": {
+    ".": {
+      "require": "./dist/index.cjs",
+      "import": "./dist/index.js"
+    }
+  },
   "devDependencies": {
     "@eslint/js": "^8.56.0",
     "@types/node": "^22.13.10",
@@ -26,7 +64,7 @@
     "@typescript-eslint/parser": "^7.0.0",
     "cross-env": "^7.0.3",
     "eslint": "^8.56.0",
-    "nodemon": "^3.1.9",
+    "tsup": "^8.4.0",
     "tsx": "^4.19.3",
     "typescript": "^5.3.3",
     "typescript-eslint": "^7.0.0"
@@ -34,6 +72,6 @@
   "dependencies": {
     "@dotenvx/dotenvx": "^1.38.5",
     "@modelcontextprotocol/sdk": "^1.7.0",
-    "ts-node": "^10.9.2"
+    "@tavily/core": "^0.3.1"
   }
 }
