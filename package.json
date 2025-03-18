@@ -43,7 +43,7 @@
     "start": "node dist/index.js",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
-    "publish": "npm run build && npm publish --registry=https://registry.npmjs.org/"
+    "publish": "npm publish --registry=https://registry.npmjs.org/"
   },
   "tsup": {
     "entry": [

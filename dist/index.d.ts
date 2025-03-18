@@ -14,11 +14,13 @@ interface ISearchRequestOptions {
     timeRange?: string;
     timeout?: number | string;
     apiKey?: string;
+    apiUrl?: string;
 }
 interface ISearchResponseResult {
     title: string;
     snippet: string;
     url: string;
+    markdown?: string;
     source?: string;
     engine?: string;
     image?: IMediaItem | null;

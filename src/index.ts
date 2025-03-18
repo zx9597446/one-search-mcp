@@ -24,11 +24,11 @@ const SEARCH_TOOL: Tool = {
       },
       limit: {
         type: 'number',
-        description: 'Maximum number of results to return (default: 5)',
+        description: 'Maximum number of results to return (default: 10)',
       },
       language: {
         type: 'string',
-        description: 'Language code for search results (default: en)',
+        description: 'Language code for search results (default: auto)',
       },
       categories: {
         type: 'string',
@@ -260,11 +260,6 @@ const SEARCH_API_URL = process.env.SEARCH_API_URL;
 const SEARCH_API_KEY = process.env.SEARCH_API_KEY;
 const SEARCH_PROVIDER: Provider = process.env.SEARCH_PROVIDER as Provider ?? 'searxng';
 
-if (!SEARCH_API_URL) {
-  process.stderr.write('SEARCH_API_URL must be set');
-  process.exit(1);
-}
-
 // query params
 const SAFE_SEARCH = process.env.SAFE_SEARCH ?? 0;
 const LIMIT = process.env.LIMIT ?? 10;
@@ -317,15 +312,28 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         throw new Error(`Invalid arguments for tool: [${name}]`);
       }
       try {
-        const { results, success } = await processSearch(SEARCH_API_URL, {
+        const { results, success } = await processSearch({
           ...config,
           ...args,
           apiKey: SEARCH_API_KEY ?? '',
+          apiUrl: SEARCH_API_URL ?? '',
         });
         if (!success) {
           throw new Error('Failed to search');
         }
+        const resultsText = results.map((result) => (
+          `Title: ${result.title}
+URL: ${result.url}
+Description: ${result.snippet}
+${result.markdown ? `Content: ${result.markdown}` : ''}`
+        ));
         return {
+          content: [
+            {
+              type: 'text',
+              text: resultsText.join('\n\n'),
+            },
+          ],
           results,
           success,
         };
@@ -337,7 +345,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const msg = error instanceof Error ? error.message : 'Unknown error';
         return {
           success: false,
-          error: msg,
+          content: [
+            {
+              type: 'text',
+              text: msg,
+            },
+          ],
         };
       }
     }
@@ -358,7 +371,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     });
     return {
       success: false,
-      error: error instanceof Error ? error.message : msg,
+      content: [
+        {
+          type: 'text',
+          text: msg,
+        },
+      ],
     };
   } finally {
     server.sendLoggingMessage({
@@ -368,16 +386,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 });
 
-async function processSearch(apiUrl: string, args: ISearchRequestOptions): Promise<ISearchResponse> {
+async function processSearch(args: ISearchRequestOptions): Promise<ISearchResponse> {
   switch (SEARCH_PROVIDER) {
   case 'searxng':
-    return await searxngSearch(apiUrl, {
+    return await searxngSearch({
       ...config,
       ...args,
       apiKey: SEARCH_API_KEY,
     });
   case 'tavily':
-    return await tavilySearch(apiUrl, {
+    return await tavilySearch({
       ...config,
       ...args,
       apiKey: SEARCH_API_KEY,

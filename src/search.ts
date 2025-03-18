@@ -6,7 +6,7 @@ import { ISearchRequestOptions, ISearchResponse, ISearchResponseResult } from '.
  * SearxNG Search API
  * - https://docs.searxng.org/dev/search_api.html
  */
-export async function searxngSearch(apiUrl: string, params: ISearchRequestOptions): Promise<ISearchResponse> {
+export async function searxngSearch(params: ISearchRequestOptions): Promise<ISearchResponse> {
   try {
     const {
       query,
@@ -18,8 +18,13 @@ export async function searxngSearch(apiUrl: string, params: ISearchRequestOption
       language = 'auto',
       timeRange = '',
       timeout = 10000,
-      apiKey = '',
+      apiKey,
+      apiUrl,
     } = params;
+
+    if (!apiUrl) {
+      throw new Error('SearxNG API URL is required');
+    }
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), Number(timeout));
@@ -84,16 +89,18 @@ export async function searxngSearch(apiUrl: string, params: ISearchRequestOption
       results: [],
       success: false,
     };
-  } catch (err: any) {
-    process.stdout.write(err?.message ?? 'Searxng search error.');
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Searxng search error.';
+    process.stdout.write(msg);
     throw err;
   }
 }
 
 
 let tvly: TavilyClient | null = null;
-export async function tavilySearch(query: string, options: ISearchRequestOptions): Promise<ISearchResponse> {
+export async function tavilySearch(options: ISearchRequestOptions): Promise<ISearchResponse> {
   const {
+    query,
     limit = 10,
     categories = 'general',
     timeRange,

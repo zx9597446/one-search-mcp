@@ -33,7 +33,7 @@ var import_types = require("@modelcontextprotocol/sdk/types.js");
 // src/search.ts
 var import_node_url = __toESM(require("url"), 1);
 var import_core = require("@tavily/core");
-async function searxngSearch(apiUrl, params) {
+async function searxngSearch(params) {
   try {
     const {
       query,
@@ -45,8 +45,12 @@ async function searxngSearch(apiUrl, params) {
       language = "auto",
       timeRange = "",
       timeout = 1e4,
-      apiKey = ""
+      apiKey,
+      apiUrl
     } = params;
+    if (!apiUrl) {
+      throw new Error("SearxNG API URL is required");
+    }
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), Number(timeout));
     const config2 = {
@@ -104,13 +108,15 @@ async function searxngSearch(apiUrl, params) {
       success: false
     };
   } catch (err) {
-    process.stdout.write(err?.message ?? "Searxng search error.");
+    const msg = err instanceof Error ? err.message : "Searxng search error.";
+    process.stdout.write(msg);
     throw err;
   }
 }
 var tvly = null;
-async function tavilySearch(query, options) {
+async function tavilySearch(options) {
   const {
+    query,
     limit = 10,
     categories = "general",
     timeRange,
@@ -157,11 +163,11 @@ var SEARCH_TOOL = {
       },
       limit: {
         type: "number",
-        description: "Maximum number of results to return (default: 5)"
+        description: "Maximum number of results to return (default: 10)"
       },
       language: {
         type: "string",
-        description: "Language code for search results (default: en)"
+        description: "Language code for search results (default: auto)"
       },
       categories: {
         type: "string",
@@ -379,10 +385,6 @@ var server = new import_server.Server(
 var SEARCH_API_URL = process.env.SEARCH_API_URL;
 var SEARCH_API_KEY = process.env.SEARCH_API_KEY;
 var SEARCH_PROVIDER = process.env.SEARCH_PROVIDER ?? "searxng";
-if (!SEARCH_API_URL) {
-  process.stderr.write("SEARCH_API_URL must be set");
-  process.exit(1);
-}
 var SAFE_SEARCH = process.env.SAFE_SEARCH ?? 0;
 var LIMIT = process.env.LIMIT ?? 10;
 var CATEGORIES = process.env.CATEGORIES ?? "general";
@@ -425,15 +427,26 @@ server.setRequestHandler(import_types.CallToolRequestSchema, async (request) => 
           throw new Error(`Invalid arguments for tool: [${name}]`);
         }
         try {
-          const { results, success } = await processSearch(SEARCH_API_URL, {
+          const { results, success } = await processSearch({
             ...config,
             ...args,
-            apiKey: SEARCH_API_KEY ?? ""
+            apiKey: SEARCH_API_KEY ?? "",
+            apiUrl: SEARCH_API_URL ?? ""
           });
           if (!success) {
             throw new Error("Failed to search");
           }
+          const resultsText = results.map((result) => `Title: ${result.title}
+URL: ${result.url}
+Description: ${result.snippet}
+${result.markdown ? `Content: ${result.markdown}` : ""}`);
           return {
+            content: [
+              {
+                type: "text",
+                text: resultsText.join("\n\n")
+              }
+            ],
             results,
             success
           };
@@ -445,7 +458,12 @@ server.setRequestHandler(import_types.CallToolRequestSchema, async (request) => 
           const msg = error instanceof Error ? error.message : "Unknown error";
           return {
             success: false,
-            error: msg
+            content: [
+              {
+                type: "text",
+                text: msg
+              }
+            ]
           };
         }
       }
@@ -466,7 +484,12 @@ server.setRequestHandler(import_types.CallToolRequestSchema, async (request) => 
     });
     return {
       success: false,
-      error: error instanceof Error ? error.message : msg
+      content: [
+        {
+          type: "text",
+          text: msg
+        }
+      ]
     };
   } finally {
     server.sendLoggingMessage({
@@ -475,16 +498,16 @@ server.setRequestHandler(import_types.CallToolRequestSchema, async (request) => 
     });
   }
 });
-async function processSearch(apiUrl, args) {
+async function processSearch(args) {
   switch (SEARCH_PROVIDER) {
     case "searxng":
-      return await searxngSearch(apiUrl, {
+      return await searxngSearch({
         ...config,
         ...args,
         apiKey: SEARCH_API_KEY
       });
     case "tavily":
-      return await tavilySearch(apiUrl, {
+      return await tavilySearch({
         ...config,
         ...args,
         apiKey: SEARCH_API_KEY
