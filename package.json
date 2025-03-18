@@ -1,6 +1,6 @@
 {
   "name": "one-search-mcp",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "One Search MCP Server, Web Search & Crawl & Scraper & Extract, support SearXNG, Firecrawl, Tavily, etc.",
   "private": false,
   "type": "module",

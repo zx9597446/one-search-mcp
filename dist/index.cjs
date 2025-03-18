@@ -29,6 +29,7 @@ var index_exports = {};
 module.exports = __toCommonJS(index_exports);
 var import_server = require("@modelcontextprotocol/sdk/server/index.js");
 var import_types = require("@modelcontextprotocol/sdk/types.js");
+var import_stdio = require("@modelcontextprotocol/sdk/server/stdio.js");
 
 // src/search.ts
 var import_node_url = __toESM(require("url"), 1);
@@ -53,7 +54,7 @@ async function searxngSearch(params) {
     }
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), Number(timeout));
-    const config2 = {
+    const config = {
       q: query,
       pageno: limit,
       categories,
@@ -64,7 +65,7 @@ async function searxngSearch(params) {
       time_range: timeRange
     };
     const endpoint = `${apiUrl}/search`;
-    const queryParams = import_node_url.default.format({ query: config2 });
+    const queryParams = import_node_url.default.format({ query: config });
     const headers = {
       "Content-Type": "application/json"
     };
@@ -147,10 +148,7 @@ async function tavilySearch(options) {
   };
 }
 
-// src/index.ts
-var import_stdio = require("@modelcontextprotocol/sdk/server/stdio.js");
-var import_dotenvx = __toESM(require("@dotenvx/dotenvx"), 1);
-import_dotenvx.default.config();
+// src/tools.ts
 var SEARCH_TOOL = {
   name: "one_search",
   description: "Search and retrieve content from web pages. Returns SERP results by default (url, title, description).",
@@ -370,6 +368,28 @@ var EXTRACT_TOOL = {
     required: ["urls"]
   }
 };
+
+// src/index.ts
+var import_firecrawl_js = __toESM(require("@mendable/firecrawl-js"), 1);
+var import_dotenvx = __toESM(require("@dotenvx/dotenvx"), 1);
+import_dotenvx.default.config();
+var SEARCH_API_URL = process.env.SEARCH_API_URL;
+var SEARCH_API_KEY = process.env.SEARCH_API_KEY;
+var SEARCH_PROVIDER = process.env.SEARCH_PROVIDER ?? "searxng";
+var SAFE_SEARCH = process.env.SAFE_SEARCH ?? 0;
+var LIMIT = process.env.LIMIT ?? 10;
+var CATEGORIES = process.env.CATEGORIES ?? "general";
+var ENGINES = process.env.ENGINES ?? "all";
+var FORMAT = process.env.FORMAT ?? "json";
+var LANGUAGE = process.env.LANGUAGE ?? "auto";
+var TIME_RANGE = process.env.TIME_RANGE ?? "";
+var DEFAULT_TIMEOUT = process.env.TIMEOUT ?? 1e4;
+var FIRECRAWL_API_KEY = process.env.FIRECRAWL_API_KEY;
+var FIRECRAWL_API_URL = process.env.FIRECRAWL_API_URL;
+var firecrawl = new import_firecrawl_js.default({
+  apiKey: FIRECRAWL_API_KEY ?? "",
+  ...FIRECRAWL_API_URL ? { apiUrl: FIRECRAWL_API_URL } : {}
+});
 var server = new import_server.Server(
   {
     name: "one-search-mcp",
@@ -382,18 +402,7 @@ var server = new import_server.Server(
     }
   }
 );
-var SEARCH_API_URL = process.env.SEARCH_API_URL;
-var SEARCH_API_KEY = process.env.SEARCH_API_KEY;
-var SEARCH_PROVIDER = process.env.SEARCH_PROVIDER ?? "searxng";
-var SAFE_SEARCH = process.env.SAFE_SEARCH ?? 0;
-var LIMIT = process.env.LIMIT ?? 10;
-var CATEGORIES = process.env.CATEGORIES ?? "general";
-var ENGINES = process.env.ENGINES ?? "all";
-var FORMAT = process.env.FORMAT ?? "json";
-var LANGUAGE = process.env.LANGUAGE ?? "auto";
-var TIME_RANGE = process.env.TIME_RANGE ?? "";
-var DEFAULT_TIMEOUT = process.env.TIMEOUT ?? 1e4;
-var config = {
+var searchConfig = {
   pageno: LIMIT,
   categories: CATEGORIES,
   format: FORMAT,
@@ -428,7 +437,7 @@ server.setRequestHandler(import_types.CallToolRequestSchema, async (request) => 
         }
         try {
           const { results, success } = await processSearch({
-            ...config,
+            ...searchConfig,
             ...args,
             apiKey: SEARCH_API_KEY ?? "",
             apiUrl: SEARCH_API_URL ?? ""
@@ -437,9 +446,9 @@ server.setRequestHandler(import_types.CallToolRequestSchema, async (request) => 
             throw new Error("Failed to search");
           }
           const resultsText = results.map((result) => `Title: ${result.title}
-URL: ${result.url}
-Description: ${result.snippet}
-${result.markdown ? `Content: ${result.markdown}` : ""}`);
+  URL: ${result.url}
+  Description: ${result.snippet}
+  ${result.markdown ? `Content: ${result.markdown}` : ""}`);
           return {
             content: [
               {
@@ -467,8 +476,47 @@ ${result.markdown ? `Content: ${result.markdown}` : ""}`);
           };
         }
       }
-      default:
+      case "one_scrape": {
+        if (!checkScrapeArgs(args)) {
+          throw new Error(`Invalid arguments for tool: [${name}]`);
+        }
+        try {
+          const startTime2 = Date.now();
+          server.sendLoggingMessage({
+            level: "info",
+            data: `[${(/* @__PURE__ */ new Date()).toISOString()}] Scraping started for url: [${args.url}]`
+          });
+          const { url: url2, ...scrapeArgs } = args;
+          const { content, success, result } = await processScrape(url2, scrapeArgs);
+          server.sendLoggingMessage({
+            level: "info",
+            data: `[${(/* @__PURE__ */ new Date()).toISOString()}] Scraping completed in ${Date.now() - startTime2}ms`
+          });
+          return {
+            content,
+            result,
+            success
+          };
+        } catch (error) {
+          server.sendLoggingMessage({
+            level: "error",
+            data: `[${(/* @__PURE__ */ new Date()).toISOString()}] Error scraping: ${error}`
+          });
+          const msg = error instanceof Error ? error.message : "Unknown error";
+          return {
+            success: false,
+            content: [
+              {
+                type: "text",
+                text: msg
+              }
+            ]
+          };
+        }
+      }
+      default: {
         throw new Error(`Unknown tool: ${name}`);
+      }
     }
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
@@ -502,13 +550,13 @@ async function processSearch(args) {
   switch (SEARCH_PROVIDER) {
     case "searxng":
       return await searxngSearch({
-        ...config,
+        ...searchConfig,
         ...args,
         apiKey: SEARCH_API_KEY
       });
     case "tavily":
       return await tavilySearch({
-        ...config,
+        ...searchConfig,
         ...args,
         apiKey: SEARCH_API_KEY
       });
@@ -516,8 +564,48 @@ async function processSearch(args) {
       throw new Error(`Unsupported search provider: ${SEARCH_PROVIDER}`);
   }
 }
+async function processScrape(url2, args) {
+  const res = await firecrawl.scrapeUrl(url2, {
+    ...args
+  });
+  if (!res.success) {
+    throw new Error(`Failed to scrape: ${res.error}`);
+  }
+  const content = [];
+  if (res.markdown) {
+    content.push(res.markdown);
+  }
+  if (res.rawHtml) {
+    content.push(res.rawHtml);
+  }
+  if (res.links) {
+    content.push(res.links.join("\n"));
+  }
+  if (res.screenshot) {
+    content.push(res.screenshot);
+  }
+  if (res.html) {
+    content.push(res.html);
+  }
+  if (res.extract) {
+    content.push(res.extract);
+  }
+  return {
+    content: [
+      {
+        type: "text",
+        text: content.join("\n\n") || "No content found"
+      }
+    ],
+    result: res,
+    success: true
+  };
+}
 function checkSearchArgs(args) {
   return typeof args === "object" && args !== null && "query" in args && typeof args.query === "string";
+}
+function checkScrapeArgs(args) {
+  return typeof args === "object" && args !== null && "url" in args && typeof args.url === "string";
 }
 async function runServer() {
   try {
