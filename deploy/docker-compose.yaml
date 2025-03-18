@@ -39,7 +39,7 @@ x-common-env: &common-env
 
 services:
   searxng:
-    image: docker.io/searxng/searxng:latest
+    image: searxng/searxng:latest
     restart: always
     ports:
       - "127.0.0.1:8080:8080"
@@ -88,7 +88,6 @@ services:
 
   redis:
     image: redis:alpine
-
     networks:
       - backend
     command: redis-server --bind 0.0.0.0
