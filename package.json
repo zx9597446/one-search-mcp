@@ -79,6 +79,7 @@
   },
   "dependencies": {
     "@dotenvx/dotenvx": "^1.38.5",
+    "@mendable/firecrawl-js": "^1.20.1",
     "@modelcontextprotocol/sdk": "^1.7.0",
     "@tavily/core": "^0.3.1"
   }

@@ -25,7 +25,7 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'warn',
       'quotes': ['error', 'single', { avoidEscape: true }],
       'semi': ['error', 'always'],
-      'indent': ['error', 2],
+      'indent': ['error', 2, { SwitchCase: 1 }],
       'comma-dangle': ['error', 'always-multiline'],
     },
   },
