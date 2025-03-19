@@ -171,11 +171,30 @@ var SEARCH_TOOL = {
       },
       categories: {
         type: "string",
+        enum: [
+          "general",
+          "news",
+          "images",
+          "videos",
+          "it",
+          "science",
+          "map",
+          "music",
+          "files",
+          "social_media"
+        ],
         description: "Categories to search for (default: general)"
       },
       timeRange: {
         type: "string",
-        description: "Time range for search results (default: all)"
+        description: "Time range for search results (default: all)",
+        enum: [
+          "all",
+          "day",
+          "week",
+          "month",
+          "year"
+        ]
       }
     },
     required: ["query"]
@@ -404,7 +423,7 @@ var server = new import_server.Server(
     }
   }
 );
-var searchConfig = {
+var searchDefaultConfig = {
   limit: Number(LIMIT),
   categories: CATEGORIES,
   format: FORMAT,
@@ -439,7 +458,6 @@ server.setRequestHandler(import_types.CallToolRequestSchema, async (request) => 
         }
         try {
           const { results, success } = await processSearch({
-            ...searchConfig,
             ...args,
             apiKey: SEARCH_API_KEY ?? "",
             apiUrl: SEARCH_API_URL ?? ""
@@ -550,18 +568,28 @@ ${result.markdown ? `Content: ${result.markdown}` : ""}`);
 });
 async function processSearch(args) {
   switch (SEARCH_PROVIDER) {
-    case "searxng":
-      return await searxngSearch({
-        ...searchConfig,
+    case "searxng": {
+      const params = {
+        ...searchDefaultConfig,
         ...args,
         apiKey: SEARCH_API_KEY
-      });
-    case "tavily":
+      };
+      const { categories, language } = searchDefaultConfig;
+      if (categories) {
+        params.categories = categories;
+      }
+      if (language) {
+        params.language = language;
+      }
+      return await searxngSearch(params);
+    }
+    case "tavily": {
       return await tavilySearch({
-        ...searchConfig,
+        ...searchDefaultConfig,
         ...args,
         apiKey: SEARCH_API_KEY
       });
+    }
     default:
       throw new Error(`Unsupported search provider: ${SEARCH_PROVIDER}`);
   }

@@ -50,7 +50,7 @@ const server = new Server(
   },
 );
 
-const searchConfig = {
+const searchDefaultConfig = {
   limit: Number(LIMIT),
   categories: CATEGORIES,
   format: FORMAT,
@@ -93,7 +93,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
         try {
           const { results, success } = await processSearch({
-            ...searchConfig,
             ...args,
             apiKey: SEARCH_API_KEY ?? '',
             apiUrl: SEARCH_API_URL ?? '',
@@ -210,18 +209,32 @@ ${result.markdown ? `Content: ${result.markdown}` : ''}`
 
 async function processSearch(args: ISearchRequestOptions): Promise<ISearchResponse> {
   switch (SEARCH_PROVIDER) {
-    case 'searxng':
-      return await searxngSearch({
-        ...searchConfig,
+    case 'searxng': {
+      // merge default config with args
+      const params = {
+        ...searchDefaultConfig,
         ...args,
         apiKey: SEARCH_API_KEY,
-      });
-    case 'tavily':
+      };
+
+      // but categories and language have higher priority (ENV > args).
+      const { categories, language } = searchDefaultConfig;
+
+      if (categories) {
+        params.categories = categories;
+      }
+      if (language) {
+        params.language = language;
+      }
+      return await searxngSearch(params);
+    }
+    case 'tavily': {
       return await tavilySearch({
-        ...searchConfig,
+        ...searchDefaultConfig,
         ...args,
         apiKey: SEARCH_API_KEY,
       });
+    }
     default:
       throw new Error(`Unsupported search provider: ${SEARCH_PROVIDER}`);
   }
