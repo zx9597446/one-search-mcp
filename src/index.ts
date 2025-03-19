@@ -11,7 +11,6 @@ import dotenvx from '@dotenvx/dotenvx';
 
 dotenvx.config();
 
-
 // search api
 const SEARCH_API_URL = process.env.SEARCH_API_URL;
 const SEARCH_API_KEY = process.env.SEARCH_API_KEY;

@@ -12,8 +12,13 @@ A Model Context Protocol (MCP) server implementation that integrates with Searxn
 ## Installation
 
 ```shell
-# Install
+# Manually install (Optional)
 npm install -g one-search-mcp
+```
+
+```shell
+# using npx
+env SEARCH_API_URL=http://127.0.0.1:8080 FIRECRAWL_API_URL=http://127.0.0.1:3002 npx -y one-search-mcp
 ```
 
 ## Environment Variables
