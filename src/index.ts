@@ -52,7 +52,7 @@ const server = new Server(
 );
 
 const searchConfig = {
-  pageno: LIMIT,
+  limit: Number(LIMIT),
   categories: CATEGORIES,
   format: FORMAT,
   safesearch: SAFE_SEARCH,
@@ -104,9 +104,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           }
           const resultsText = results.map((result) => (
             `Title: ${result.title}
-  URL: ${result.url}
-  Description: ${result.snippet}
-  ${result.markdown ? `Content: ${result.markdown}` : ''}`
+URL: ${result.url}
+Description: ${result.snippet}
+${result.markdown ? `Content: ${result.markdown}` : ''}`
           ));
           return {
             content: [

@@ -5,6 +5,7 @@ export interface IMediaItem {
 
 export interface ISearchRequestOptions {
   query: string;
+  page?: number;
   limit?: number;
   categories?: string;
   format?: string;

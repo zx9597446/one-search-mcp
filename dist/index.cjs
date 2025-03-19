@@ -38,6 +38,7 @@ async function searxngSearch(params) {
   try {
     const {
       query,
+      page = 1,
       limit = 10,
       categories = "general",
       engines = "all",
@@ -56,7 +57,7 @@ async function searxngSearch(params) {
     const timeoutId = setTimeout(() => controller.abort(), Number(timeout));
     const config = {
       q: query,
-      pageno: limit,
+      pageno: page,
       categories,
       format,
       safesearch: safeSearch,
@@ -78,9 +79,10 @@ async function searxngSearch(params) {
       signal: controller.signal
     });
     clearTimeout(timeoutId);
-    const result = await res.json();
-    if (result.results) {
-      const results = result.results.map((item) => {
+    const response = await res.json();
+    if (response.results) {
+      const list = response.results.slice(0, limit);
+      const results = list.map((item) => {
         const image = item.img_src ? {
           thumbnail: item.thumbnail_src,
           src: item.img_src
@@ -403,7 +405,7 @@ var server = new import_server.Server(
   }
 );
 var searchConfig = {
-  pageno: LIMIT,
+  limit: Number(LIMIT),
   categories: CATEGORIES,
   format: FORMAT,
   safesearch: SAFE_SEARCH,
@@ -446,9 +448,9 @@ server.setRequestHandler(import_types.CallToolRequestSchema, async (request) => 
             throw new Error("Failed to search");
           }
           const resultsText = results.map((result) => `Title: ${result.title}
-  URL: ${result.url}
-  Description: ${result.snippet}
-  ${result.markdown ? `Content: ${result.markdown}` : ""}`);
+URL: ${result.url}
+Description: ${result.snippet}
+${result.markdown ? `Content: ${result.markdown}` : ""}`);
           return {
             content: [
               {

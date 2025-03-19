@@ -10,6 +10,7 @@ export async function searxngSearch(params: ISearchRequestOptions): Promise<ISea
   try {
     const {
       query,
+      page = 1,
       limit = 10,
       categories = 'general',
       engines = 'all',
@@ -31,7 +32,7 @@ export async function searxngSearch(params: ISearchRequestOptions): Promise<ISea
 
     const config = {
       q: query,
-      pageno: limit,
+      pageno: page,
       categories,
       format,
       safesearch: safeSearch,
@@ -59,9 +60,10 @@ export async function searxngSearch(params: ISearchRequestOptions): Promise<ISea
     });
 
     clearTimeout(timeoutId);
-    const result = await res.json();
-    if (result.results) {
-      const results: ISearchResponseResult[] = result.results.map((item: Record<string, unknown>) => {
+    const response = await res.json();
+    if (response.results) {
+      const list = (response.results as Array<Record<string, any>>).slice(0, limit);
+      const results: ISearchResponseResult[] = list.map((item: Record<string, any>) => {
         const image = item.img_src ? {
           thumbnail: item.thumbnail_src,
           src: item.img_src,
