@@ -5,9 +5,109 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 
-// src/search.ts
+// src/search/bing.ts
+async function bingSearch(options) {
+  const { query, limit = 10, safeSearch = 0, page = 1, apiUrl = "https://api.bing.microsoft.com/v7.0/search", apiKey, language } = options;
+  const bingSafeSearchOptions = ["Off", "Moderate", "Strict"];
+  if (!apiKey) {
+    throw new Error("Bing API key is required");
+  }
+  const searchOptions = {
+    q: query,
+    count: limit,
+    offset: (page - 1) * limit,
+    mkt: language,
+    safeSearch: bingSafeSearchOptions[safeSearch]
+  };
+  try {
+    const queryParams = new URLSearchParams();
+    Object.entries(searchOptions).forEach(([key, value]) => {
+      if (value !== void 0) {
+        queryParams.set(key, value.toString());
+      }
+    });
+    const res = await fetch(`${apiUrl}?${queryParams}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Ocp-Apim-Subscription-Key": apiKey
+      }
+    });
+    if (!res.ok) {
+      throw new Error(`Bing search error: ${res.status} ${res.statusText}`);
+    }
+    const data = await res.json();
+    const serp = data.webPages?.value;
+    const results = serp?.map((item) => ({
+      title: item.name,
+      snippet: item.snippet,
+      url: item.url,
+      source: item.siteName,
+      thumbnailUrl: item.thumbnailUrl,
+      language: item.language,
+      image: null,
+      video: null,
+      engine: "bing"
+    })) ?? [];
+    return {
+      results,
+      success: true
+    };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Bing search error.";
+    process.stdout.write(msg);
+    throw err;
+  }
+}
+
+// src/search/duckduckgo.ts
+import * as DDG from "duck-duck-scrape";
+import asyncRetry from "async-retry";
+async function duckDuckGoSearch(options) {
+  try {
+    const { query, timeout = 1e4, safeSearch = DDG.SafeSearchType.OFF, retry = { retries: 3 }, ...searchOptions } = options;
+    const res = await asyncRetry(
+      () => {
+        return DDG.search(query, {
+          ...searchOptions,
+          safeSearch
+        }, {
+          // needle options
+          response_timeout: timeout
+        });
+      },
+      retry
+    );
+    const results = res ? {
+      noResults: res.noResults,
+      vqd: res.vqd,
+      results: res.results
+    } : {
+      noResults: true,
+      vqd: "",
+      results: []
+    };
+    return {
+      results: results.results.map((result) => ({
+        title: result.title,
+        snippet: result.description,
+        url: result.url,
+        source: result.hostname,
+        image: null,
+        video: null,
+        engine: "duckduckgo"
+      })),
+      success: true
+    };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : "DuckDuckGo search error.";
+    process.stdout.write(msg);
+    throw error;
+  }
+}
+
+// src/search/searxng.ts
 import url from "node:url";
-import { tavily } from "@tavily/core";
 async function searxngSearch(params) {
   try {
     const {
@@ -90,59 +190,9 @@ async function searxngSearch(params) {
     throw err;
   }
 }
-async function bingSearch(options) {
-  const { query, limit = 10, safeSearch = 0, page = 1, apiUrl = "https://api.bing.microsoft.com/v7.0/search", apiKey, language } = options;
-  const bingSafeSearchOptions = ["Off", "Moderate", "Strict"];
-  if (!apiKey) {
-    throw new Error("Bing API key is required");
-  }
-  const bingSearchOptions = {
-    q: query,
-    count: limit,
-    offset: (page - 1) * limit,
-    mkt: language,
-    safeSearch: bingSafeSearchOptions[safeSearch]
-  };
-  try {
-    const queryParams = new URLSearchParams();
-    Object.entries(bingSearchOptions).forEach(([key, value]) => {
-      if (value !== void 0) {
-        queryParams.set(key, value.toString());
-      }
-    });
-    const res = await fetch(`${apiUrl}?${queryParams}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        "Ocp-Apim-Subscription-Key": apiKey
-      }
-    });
-    if (!res.ok) {
-      throw new Error(`Bing search error: ${res.status} ${res.statusText}`);
-    }
-    const data = await res.json();
-    const serp = data.webPages?.value;
-    const results = serp?.map((item) => ({
-      title: item.name,
-      snippet: item.snippet,
-      url: item.url,
-      source: item.siteName,
-      thumbnailUrl: item.thumbnailUrl,
-      language: item.language,
-      image: null,
-      video: null,
-      engine: "bing"
-    })) ?? [];
-    return {
-      results,
-      success: true
-    };
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : "Bing search error.";
-    process.stdout.write(msg);
-    throw err;
-  }
-}
+
+// src/search/tavily.ts
+import { tavily } from "@tavily/core";
 async function tavilySearch(options) {
   const {
     query,
@@ -154,25 +204,31 @@ async function tavilySearch(options) {
   if (!apiKey) {
     throw new Error("Tavily API key is required");
   }
-  const tvly = tavily({
-    apiKey
-  });
-  const params = {
-    topic: categories,
-    timeRange,
-    maxResults: limit
-  };
-  const res = await tvly.search(query, params);
-  const results = res.results.map((item) => ({
-    title: item.title,
-    url: item.url,
-    snippet: item.content,
-    engine: "tavily"
-  }));
-  return {
-    results,
-    success: true
-  };
+  try {
+    const tvly = tavily({
+      apiKey
+    });
+    const params = {
+      topic: categories,
+      timeRange,
+      maxResults: limit
+    };
+    const res = await tvly.search(query, params);
+    const results = res.results.map((item) => ({
+      title: item.title,
+      url: item.url,
+      snippet: item.content,
+      engine: "tavily"
+    }));
+    return {
+      results,
+      success: true
+    };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : "Tavily search error.";
+    process.stdout.write(msg);
+    throw error;
+  }
 }
 
 // src/tools.ts
@@ -223,6 +279,40 @@ var SEARCH_TOOL = {
       }
     },
     required: ["query"]
+  }
+};
+var MAP_TOOL = {
+  name: "one_map",
+  description: "Discover URLs from a starting point. Can use both sitemap.xml and HTML link discovery.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      url: {
+        type: "string",
+        description: "Starting URL for URL discovery"
+      },
+      search: {
+        type: "string",
+        description: "Optional search term to filter URLs"
+      },
+      ignoreSitemap: {
+        type: "boolean",
+        description: "Skip sitemap.xml discovery and only use HTML links"
+      },
+      sitemapOnly: {
+        type: "boolean",
+        description: "Only use sitemap.xml for discovery, ignore HTML links"
+      },
+      includeSubdomains: {
+        type: "boolean",
+        description: "Include URLs from subdomains in results"
+      },
+      limit: {
+        type: "number",
+        description: "Maximum number of URLs to return"
+      }
+    },
+    required: ["url"]
   }
 };
 var SCRAPE_TOOL = {
@@ -418,6 +508,7 @@ var EXTRACT_TOOL = {
 // src/index.ts
 import FirecrawlApp from "@mendable/firecrawl-js";
 import dotenvx from "@dotenvx/dotenvx";
+import { SafeSearchType as SafeSearchType2 } from "duck-duck-scrape";
 dotenvx.config();
 var SEARCH_API_URL = process.env.SEARCH_API_URL;
 var SEARCH_API_KEY = process.env.SEARCH_API_KEY;
@@ -462,7 +553,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [
     SEARCH_TOOL,
     EXTRACT_TOOL,
-    SCRAPE_TOOL
+    SCRAPE_TOOL,
+    MAP_TOOL
   ]
 }));
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
@@ -559,6 +651,34 @@ ${result.markdown ? `Content: ${result.markdown}` : ""}`);
           };
         }
       }
+      case "one_map": {
+        if (!checkMapArgs(args)) {
+          throw new Error(`Invalid arguments for tool: [${name}]`);
+        }
+        try {
+          const { content, success, result } = await processMapUrl(args.url, args);
+          return {
+            content,
+            result,
+            success
+          };
+        } catch (error) {
+          server.sendLoggingMessage({
+            level: "error",
+            data: `[${(/* @__PURE__ */ new Date()).toISOString()}] Error mapping: ${error}`
+          });
+          const msg = error instanceof Error ? error.message : String(error);
+          return {
+            success: false,
+            content: [
+              {
+                type: "text",
+                text: msg
+              }
+            ]
+          };
+        }
+      }
       default: {
         throw new Error(`Unknown tool: ${name}`);
       }
@@ -622,6 +742,16 @@ async function processSearch(args) {
         apiKey: SEARCH_API_KEY
       });
     }
+    case "duckduckgo": {
+      const safeSearch = args.safeSearch ?? 0;
+      const safeSearchOptions = [SafeSearchType2.STRICT, SafeSearchType2.MODERATE, SafeSearchType2.OFF];
+      return await duckDuckGoSearch({
+        ...searchDefaultConfig,
+        ...args,
+        apiKey: SEARCH_API_KEY,
+        safeSearch: safeSearchOptions[safeSearch]
+      });
+    }
     default:
       throw new Error(`Unsupported search provider: ${SEARCH_PROVIDER}`);
   }
@@ -663,10 +793,34 @@ async function processScrape(url2, args) {
     success: true
   };
 }
+async function processMapUrl(url2, args) {
+  const res = await firecrawl.mapUrl(url2, {
+    ...args
+  });
+  if ("error" in res) {
+    throw new Error(`Failed to map: ${res.error}`);
+  }
+  if (!res.links) {
+    throw new Error(`No links found from: ${url2}`);
+  }
+  return {
+    content: [
+      {
+        type: "text",
+        text: res.links.join("\n").trim()
+      }
+    ],
+    result: res.links,
+    success: true
+  };
+}
 function checkSearchArgs(args) {
   return typeof args === "object" && args !== null && "query" in args && typeof args.query === "string";
 }
 function checkScrapeArgs(args) {
+  return typeof args === "object" && args !== null && "url" in args && typeof args.url === "string";
+}
+function checkMapArgs(args) {
   return typeof args === "object" && args !== null && "url" in args && typeof args.url === "string";
 }
 async function runServer() {
@@ -690,5 +844,9 @@ runServer().catch((error) => {
   process.stderr.write(`Error running server: ${msg}
 `);
   process.exit(1);
+});
+duckDuckGoSearch({
+  query: "hello",
+  safeSearch: SafeSearchType2.OFF
 });
 //# sourceMappingURL=index.js.map

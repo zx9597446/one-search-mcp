@@ -4,10 +4,11 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import  { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { ISearchRequestOptions, ISearchResponse, Provider } from './interface.js';
-import { bingSearch, searxngSearch, tavilySearch } from './search.js';
-import { SEARCH_TOOL, EXTRACT_TOOL, SCRAPE_TOOL } from './tools.js';
-import FirecrawlApp, { ScrapeParams } from '@mendable/firecrawl-js';
+import { bingSearch, duckDuckGoSearch, searxngSearch, tavilySearch } from './search/index.js';
+import { SEARCH_TOOL, EXTRACT_TOOL, SCRAPE_TOOL, MAP_TOOL } from './tools.js';
+import FirecrawlApp, { MapParams, ScrapeParams } from '@mendable/firecrawl-js';
 import dotenvx from '@dotenvx/dotenvx';
+import { SafeSearchType } from 'duck-duck-scrape';
 
 dotenvx.config();
 
@@ -67,6 +68,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     SEARCH_TOOL,
     EXTRACT_TOOL,
     SCRAPE_TOOL,
+    MAP_TOOL,
   ],
 }));
 
@@ -174,6 +176,34 @@ ${result.markdown ? `Content: ${result.markdown}` : ''}`
           };
         }
       }
+      case 'one_map': {
+        if (!checkMapArgs(args)) {
+          throw new Error(`Invalid arguments for tool: [${name}]`);
+        }
+        try {
+          const { content, success, result } = await processMapUrl(args.url, args);
+          return {
+            content,
+            result,
+            success,
+          };
+        } catch (error) {
+          server.sendLoggingMessage({
+            level: 'error',
+            data: `[${new Date().toISOString()}] Error mapping: ${error}`,
+          });
+          const msg = error instanceof Error ? error.message : String(error);
+          return {
+            success: false,
+            content: [
+              {
+                type: 'text',
+                text: msg,
+              },
+            ],
+          };
+        }
+      }
       default: {
         throw new Error(`Unknown tool: ${name}`);
       }
@@ -242,6 +272,16 @@ async function processSearch(args: ISearchRequestOptions): Promise<ISearchRespon
         apiKey: SEARCH_API_KEY,
       });
     }
+    case 'duckduckgo': {
+      const safeSearch = args.safeSearch ?? 0;
+      const safeSearchOptions = [SafeSearchType.STRICT, SafeSearchType.MODERATE, SafeSearchType.OFF];
+      return await duckDuckGoSearch({
+        ...searchDefaultConfig,
+        ...args,
+        apiKey: SEARCH_API_KEY,
+        safeSearch: safeSearchOptions[safeSearch],
+      });
+    }
     default:
       throw new Error(`Unsupported search provider: ${SEARCH_PROVIDER}`);
   }
@@ -294,6 +334,31 @@ async function processScrape(url: string, args: ScrapeParams) {
   };
 }
 
+async function processMapUrl(url: string, args: MapParams) {
+  const res = await firecrawl.mapUrl(url, {
+    ...args,
+  });
+
+  if ('error' in res) {
+    throw new Error(`Failed to map: ${res.error}`);
+  }
+
+  if (!res.links) {
+    throw new Error(`No links found from: ${url}`);
+  }
+
+  return {
+    content: [
+      {
+        type: 'text',
+        text: res.links.join('\n').trim(),
+      },
+    ],
+    result: res.links,
+    success: true,
+  };
+}
+
 function checkSearchArgs(args: unknown): args is ISearchRequestOptions {
   return (
     typeof args === 'object' &&
@@ -304,6 +369,15 @@ function checkSearchArgs(args: unknown): args is ISearchRequestOptions {
 }
 
 function checkScrapeArgs(args: unknown): args is ScrapeParams & { url: string } {
+  return (
+    typeof args === 'object' &&
+    args !== null &&
+    'url' in args &&
+    typeof args.url === 'string'
+  );
+}
+
+function checkMapArgs(args: unknown): args is MapParams & { url: string } {
   return (
     typeof args === 'object' &&
     args !== null &&
@@ -340,3 +414,8 @@ runServer().catch((error) => {
 
 // export types
 export * from './interface.js';
+
+duckDuckGoSearch({
+  query: 'hello',
+  safeSearch: SafeSearchType.OFF,
+});

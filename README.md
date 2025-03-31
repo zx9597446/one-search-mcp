@@ -25,9 +25,9 @@ env SEARCH_API_URL=http://127.0.0.1:8080 FIRECRAWL_API_URL=http://127.0.0.1:3002
 
 **Search:**
 
-- SEARCH_PROVIDER (Optional): The search provider to use, either `searxng` or `tavily`, default is `searxng`.
-- SEARCH_API_URL (Optional): The URL of the SearxNG API, required for `searxng`.
-- SEARCH_API_KEY (Optional): The API key for the search provider, required for `tavily`.
+- **SEARCH_PROVIDER** (Optional): The search provider to use, supports `searxng`, `duckduckgo`, `bing`, `tavily`, default is `searxng`.
+- **SEARCH_API_URL** (Optional): The URL of the SearxNG API, required for `searxng`.
+- **SEARCH_API_KEY** (Optional): The API key for the search provider, required for `tavily`, `bing`.
 
 **Firecrawl:**
 

@@ -1,3 +1,8 @@
+/**
+ * The following tools are based on the Firecrawl MCP Server
+ * https://github.com/mendableai/firecrawl-mcp-server
+ */
+
 import { Tool } from '@modelcontextprotocol/sdk/types.js';
 
 // tools definition
@@ -50,6 +55,42 @@ export const SEARCH_TOOL: Tool = {
       },
     },
     required: ['query'],
+  },
+};
+
+export const MAP_TOOL: Tool = {
+  name: 'one_map',
+  description:
+    'Discover URLs from a starting point. Can use both sitemap.xml and HTML link discovery.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      url: {
+        type: 'string',
+        description: 'Starting URL for URL discovery',
+      },
+      search: {
+        type: 'string',
+        description: 'Optional search term to filter URLs',
+      },
+      ignoreSitemap: {
+        type: 'boolean',
+        description: 'Skip sitemap.xml discovery and only use HTML links',
+      },
+      sitemapOnly: {
+        type: 'boolean',
+        description: 'Only use sitemap.xml for discovery, ignore HTML links',
+      },
+      includeSubdomains: {
+        type: 'boolean',
+        description: 'Include URLs from subdomains in results',
+      },
+      limit: {
+        type: 'number',
+        description: 'Maximum number of URLs to return',
+      },
+    },
+    required: ['url'],
   },
 };
 
@@ -208,6 +249,8 @@ export const SCRAPE_TOOL: Tool = {
     required: ['url'],
   },
 };
+
+
 
 export const EXTRACT_TOOL: Tool = {
   name: 'one_extract',

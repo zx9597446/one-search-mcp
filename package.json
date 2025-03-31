@@ -1,7 +1,7 @@
 {
   "name": "one-search-mcp",
-  "version": "1.0.7",
-  "description": "One Search MCP Server, Web Search & Crawl & Scraper & Extract, support SearXNG, Firecrawl, Tavily, etc.",
+  "version": "1.0.8",
+  "description": "One Search MCP Server, Web Search & Crawl & Scraper & Extract, support Firecrawl, SearXNG, Tavily, DuckDuckGo, Bing, etc.",
   "private": false,
   "type": "module",
   "keywords": [
@@ -9,9 +9,12 @@
     "LLM",
     "MCP",
     "ModelContextProtocol",
-    "SearXNG MCP Server",
     "Firecrawl MCP Server",
     "Search MCP Server",
+    "SearXNG MCP Server",
+    "DuckDuckGo MCP Server",
+    "Bing MCP Server",
+    "Tavily MCP Server",
     "Web Search",
     "LLM Tool",
     "One Search"
@@ -38,7 +41,7 @@
     "node": ">=20.0.0"
   },
   "scripts": {
-    "dev": "dotenvx run -- cross-env NODE_ENV=development tsx src/test.ts",
+    "dev": "dotenvx run -- cross-env NODE_ENV=development tsx src/index.ts",
     "build": "tsup && node -e \"require('fs').chmodSync('dist/index.js', '755')\"",
     "start": "node dist/index.js",
     "lint": "eslint src",
@@ -66,6 +69,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^8.56.0",
+    "@types/async-retry": "^1.4.9",
     "@types/node": "^22.13.10",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
@@ -80,6 +84,8 @@
     "@dotenvx/dotenvx": "^1.38.5",
     "@mendable/firecrawl-js": "^1.20.1",
     "@modelcontextprotocol/sdk": "^1.7.0",
-    "@tavily/core": "^0.3.1"
+    "@tavily/core": "^0.3.1",
+    "async-retry": "^1.3.3",
+    "duck-duck-scrape": "^2.2.7"
   }
 }
