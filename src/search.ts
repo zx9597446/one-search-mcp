@@ -1,6 +1,6 @@
 import url from 'node:url';
-import { tavily, TavilyClient, TavilySearchOptions } from '@tavily/core';
-import { ISearchRequestOptions, ISearchResponse, ISearchResponseResult } from './interface.js';
+import { tavily, TavilySearchOptions } from '@tavily/core';
+import { BingSearchOptions, BingSearchWebPage, ISearchRequestOptions, ISearchResponse, ISearchResponseResult } from './interface.js';
 
 /**
  * SearxNG Search API
@@ -98,8 +98,75 @@ export async function searxngSearch(params: ISearchRequestOptions): Promise<ISea
   }
 }
 
+/**
+ * Bing Search API
+ */
+export async function bingSearch(options: ISearchRequestOptions): Promise<ISearchResponse> {
+  const { query, limit = 10, safeSearch = 0, page = 1, apiUrl = 'https://api.bing.microsoft.com/v7.0/search', apiKey, language } = options;
 
-let tvly: TavilyClient | null = null;
+  const bingSafeSearchOptions = ['Off', 'Moderate', 'Strict'];
+
+  if (!apiKey) {
+    throw new Error('Bing API key is required');
+  }
+
+  const bingSearchOptions: BingSearchOptions = {
+    q: query,
+    count: limit,
+    offset: (page - 1) * limit,
+    mkt: language,
+    safeSearch: bingSafeSearchOptions[safeSearch] as 'Off' | 'Moderate' | 'Strict',
+  };
+
+  try {
+    const queryParams = new URLSearchParams();
+    Object.entries(bingSearchOptions).forEach(([key, value]) => {
+      if (value !== undefined) {
+        queryParams.set(key, value.toString());
+      }
+    });
+
+    const res = await fetch(`${apiUrl}?${queryParams}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Ocp-Apim-Subscription-Key': apiKey,
+      },
+    });
+
+    if (!res.ok) {
+      throw new Error(`Bing search error: ${res.status} ${res.statusText}`);
+    }
+
+    const data = await res.json();
+    const serp = data.webPages?.value as Array<BingSearchWebPage>;
+    const results = serp?.map((item: BingSearchWebPage) => ({
+      title: item.name,
+      snippet: item.snippet,
+      url: item.url,
+      source: item.siteName,
+      thumbnailUrl: item.thumbnailUrl,
+      language: item.language,
+      image: null,
+      video: null,
+      engine: 'bing',
+    })) ?? [];
+
+    return {
+      results,
+      success: true,
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Bing search error.';
+    process.stdout.write(msg);
+    throw err;
+  }
+}
+
+/**
+ * Tavily Search API
+ * - https://docs.tavily.com/documentation/quickstart
+ */
 export async function tavilySearch(options: ISearchRequestOptions): Promise<ISearchResponse> {
   const {
     query,
@@ -113,11 +180,9 @@ export async function tavilySearch(options: ISearchRequestOptions): Promise<ISea
     throw new Error('Tavily API key is required');
   }
 
-  if (!tvly) {
-    tvly = tavily({
-      apiKey,
-    });
-  }
+  const tvly = tavily({
+    apiKey,
+  });
 
   const params: TavilySearchOptions = {
     topic: categories as TavilySearchOptions['topic'],
@@ -130,6 +195,7 @@ export async function tavilySearch(options: ISearchRequestOptions): Promise<ISea
     title: item.title,
     url: item.url,
     snippet: item.content,
+    engine: 'tavily',
   }));
 
   return {

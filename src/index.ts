@@ -4,7 +4,7 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import  { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { ISearchRequestOptions, ISearchResponse, Provider } from './interface.js';
-import { searxngSearch, tavilySearch } from './search.js';
+import { bingSearch, searxngSearch, tavilySearch } from './search.js';
 import { SEARCH_TOOL, EXTRACT_TOOL, SCRAPE_TOOL } from './tools.js';
 import FirecrawlApp, { ScrapeParams } from '@mendable/firecrawl-js';
 import dotenvx from '@dotenvx/dotenvx';
@@ -95,7 +95,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           const { results, success } = await processSearch({
             ...args,
             apiKey: SEARCH_API_KEY ?? '',
-            apiUrl: SEARCH_API_URL ?? '',
+            apiUrl: SEARCH_API_URL,
           });
           if (!success) {
             throw new Error('Failed to search');
@@ -230,6 +230,13 @@ async function processSearch(args: ISearchRequestOptions): Promise<ISearchRespon
     }
     case 'tavily': {
       return await tavilySearch({
+        ...searchDefaultConfig,
+        ...args,
+        apiKey: SEARCH_API_KEY,
+      });
+    }
+    case 'bing': {
+      return await bingSearch({
         ...searchDefaultConfig,
         ...args,
         apiKey: SEARCH_API_KEY,

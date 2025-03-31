@@ -90,7 +90,59 @@ async function searxngSearch(params) {
     throw err;
   }
 }
-var tvly = null;
+async function bingSearch(options) {
+  const { query, limit = 10, safeSearch = 0, page = 1, apiUrl = "https://api.bing.microsoft.com/v7.0/search", apiKey, language } = options;
+  const bingSafeSearchOptions = ["Off", "Moderate", "Strict"];
+  if (!apiKey) {
+    throw new Error("Bing API key is required");
+  }
+  const bingSearchOptions = {
+    q: query,
+    count: limit,
+    offset: (page - 1) * limit,
+    mkt: language,
+    safeSearch: bingSafeSearchOptions[safeSearch]
+  };
+  try {
+    const queryParams = new URLSearchParams();
+    Object.entries(bingSearchOptions).forEach(([key, value]) => {
+      if (value !== void 0) {
+        queryParams.set(key, value.toString());
+      }
+    });
+    const res = await fetch(`${apiUrl}?${queryParams}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Ocp-Apim-Subscription-Key": apiKey
+      }
+    });
+    if (!res.ok) {
+      throw new Error(`Bing search error: ${res.status} ${res.statusText}`);
+    }
+    const data = await res.json();
+    const serp = data.webPages?.value;
+    const results = serp?.map((item) => ({
+      title: item.name,
+      snippet: item.snippet,
+      url: item.url,
+      source: item.siteName,
+      thumbnailUrl: item.thumbnailUrl,
+      language: item.language,
+      image: null,
+      video: null,
+      engine: "bing"
+    })) ?? [];
+    return {
+      results,
+      success: true
+    };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Bing search error.";
+    process.stdout.write(msg);
+    throw err;
+  }
+}
 async function tavilySearch(options) {
   const {
     query,
@@ -102,11 +154,9 @@ async function tavilySearch(options) {
   if (!apiKey) {
     throw new Error("Tavily API key is required");
   }
-  if (!tvly) {
-    tvly = tavily({
-      apiKey
-    });
-  }
+  const tvly = tavily({
+    apiKey
+  });
   const params = {
     topic: categories,
     timeRange,
@@ -116,7 +166,8 @@ async function tavilySearch(options) {
   const results = res.results.map((item) => ({
     title: item.title,
     url: item.url,
-    snippet: item.content
+    snippet: item.content,
+    engine: "tavily"
   }));
   return {
     results,
@@ -434,7 +485,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           const { results, success } = await processSearch({
             ...args,
             apiKey: SEARCH_API_KEY ?? "",
-            apiUrl: SEARCH_API_URL ?? ""
+            apiUrl: SEARCH_API_URL
           });
           if (!success) {
             throw new Error("Failed to search");
@@ -559,6 +610,13 @@ async function processSearch(args) {
     }
     case "tavily": {
       return await tavilySearch({
+        ...searchDefaultConfig,
+        ...args,
+        apiKey: SEARCH_API_KEY
+      });
+    }
+    case "bing": {
+      return await bingSearch({
         ...searchDefaultConfig,
         ...args,
         apiKey: SEARCH_API_KEY
