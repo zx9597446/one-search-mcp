@@ -5,9 +5,9 @@ A Model Context Protocol (MCP) server implementation that integrates with Searxn
 ## Features
 
 - Web Search, scrape, crawl and extract content from websites.
-- Support multiple search engines and web scrapers: SearXNG, Firecrawl, Tavily, etc.
+- Support multiple search engines and web scrapers: **SearXNG**, **Firecrawl**, **Tavily**, **DuckDuckGo**, **Bing**, etc.
 - Support for self-hosted: SearXNG, Firecrawl, etc. (see [Deploy](./deploy/README.md))
-- **Enabled tools:** `one_search`, `one_scrape`
+- **Enabled tools:** `one_search`, `one_scrape`, `one_map`
 
 ## Installation
 
@@ -23,7 +23,7 @@ env SEARCH_API_URL=http://127.0.0.1:8080 FIRECRAWL_API_URL=http://127.0.0.1:3002
 
 ## Environment Variables
 
-**Search:**
+**Search Engine:**
 
 - **SEARCH_PROVIDER** (Optional): The search provider to use, supports `searxng`, `duckduckgo`, `bing`, `tavily`, default is `searxng`.
 - **SEARCH_API_URL** (Optional): The URL of the SearxNG API, required for `searxng`.
