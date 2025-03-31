@@ -3,7 +3,7 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import  { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { ISearchRequestOptions, ISearchResponse, Provider } from './interface.js';
+import { ISearchRequestOptions, ISearchResponse, SearchProvider } from './interface.js';
 import { bingSearch, duckDuckGoSearch, searxngSearch, tavilySearch } from './search/index.js';
 import { SEARCH_TOOL, EXTRACT_TOOL, SCRAPE_TOOL, MAP_TOOL } from './tools.js';
 import FirecrawlApp, { MapParams, ScrapeParams } from '@mendable/firecrawl-js';
@@ -15,7 +15,7 @@ dotenvx.config();
 // search api
 const SEARCH_API_URL = process.env.SEARCH_API_URL;
 const SEARCH_API_KEY = process.env.SEARCH_API_KEY;
-const SEARCH_PROVIDER: Provider = process.env.SEARCH_PROVIDER as Provider ?? 'searxng';
+const SEARCH_PROVIDER: SearchProvider = process.env.SEARCH_PROVIDER as SearchProvider ?? 'searxng';
 
 // search query params
 const SAFE_SEARCH = process.env.SAFE_SEARCH ?? 0;
