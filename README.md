@@ -1,17 +1,17 @@
 # 🚀 OneSearch MCP Server: Web Search & Crawl & Scraper & Extract
 
-A Model Context Protocol (MCP) server implementation that integrates with Searxng/Firecrawl/Tavily for web search and scraping capabilities.
+A Model Context Protocol (MCP) server implementation that integrates with Searxng/Tavily/DuckDuckGo/Bing for web search, local browser search, and scraping capabilities with Firecrawl.
 
 ## Features
 
 - Web Search, scrape, crawl and extract content from websites.
 - Support multiple search engines and web scrapers: **SearXNG**, **Firecrawl**, **Tavily**, **DuckDuckGo**, **Bing**, etc.
-- Support for self-hosted: SearXNG, Firecrawl, etc. (see [Deploy](./deploy/README.md))
 - **Local web search** (browser search), support multiple search engines: **Bing**, **Google**, **Baidu**, **Sogou**, etc.
   - Use `puppeteer-core` to scrape content from websites.
   - You should have a local browser installed, such as `Chromium`, `Google Chrome`, `Google Chrome Canary`, etc.
   - Free, no keys required.
 - **Enabled tools:** `one_search`, `one_scrape`, `one_map`
+- Support for self-hosted: SearXNG, Firecrawl, etc. (see [Deploy](./deploy/README.md))
 
 ## Installation
 
