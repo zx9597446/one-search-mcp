@@ -121,7 +121,7 @@ export class BrowserSearch {
     let links = await browser.evaluateOnNewPage({
       url,
       waitForOptions: {
-        waitUntil: 'networkidle0',
+        waitUntil: 'networkidle2',
       },
       pageFunction: searchEngine.extractSearchResults,
       pageFunctionParams: [],
@@ -129,12 +129,6 @@ export class BrowserSearch {
         await interceptRequest(page);
       },
       afterPageLoad: async (page) => {
-        // const content = await page.screenshot({
-        //   type: 'jpeg',
-        //   quality: 50,
-        //   encoding: 'base64',
-        // });
-        // this.logger.info('Page content:', content);
         if (searchEngine.waitForSearchResults)
           await searchEngine.waitForSearchResults(page, 10000);
       },

@@ -71,15 +71,22 @@ export class SogouSearchEngine implements SearchEngineAdapter {
         let url = element.querySelector(SELECTOR.resultLink)?.getAttribute('href');
 
         const snippets = SELECTOR.resultSnippet.map((selector) => {
+          const cloneElement = element.cloneNode(true) as HTMLElement;
           // remove excluded elements
           SELECTOR.resultSnippetExcluded.forEach((excludedSelector) => {
-            const el = element.querySelector(excludedSelector);
+            const el = cloneElement.querySelector(excludedSelector);
             el?.remove();
           });
           // get the text content of the element
-          const el = element.querySelector(selector);
+          const el = cloneElement.querySelector(selector);
           return el?.textContent?.trim() || '';
         });
+
+        const snippet = snippets
+          .filter(Boolean)
+          .join(' ')
+          .replace(/\s+/g, ' ')
+          .trim();
 
         if (!url?.includes('http')) url = `${EndPoints}${url}`;
 
@@ -88,7 +95,7 @@ export class SogouSearchEngine implements SearchEngineAdapter {
         const item: SearchResult = {
           title: titleEl?.textContent?.trim() || '',
           url,
-          snippet: snippets.join(''),
+          snippet,
           content: '',
         };
 
@@ -106,7 +113,7 @@ export class SogouSearchEngine implements SearchEngineAdapter {
   }
 
   /**
-  * Waits for Bing search results to load completely.
+  * Waits for Sogou search results to load completely.
   *
   * @param page - The Puppeteer page object
   * @returns Promise that resolves when search results are loaded
