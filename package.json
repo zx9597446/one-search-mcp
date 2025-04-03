@@ -1,6 +1,6 @@
 {
   "name": "one-search-mcp",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "One Search MCP Server, Web Search & Crawl & Scraper & Extract, support Firecrawl, SearXNG, Tavily, DuckDuckGo, Bing, etc.",
   "private": false,
   "type": "module",
@@ -59,7 +59,8 @@
     "splitting": false,
     "dts": true,
     "clean": true,
-    "sourcemap": true
+    "sourcemap": true,
+    "minify": true
   },
   "exports": {
     ".": {

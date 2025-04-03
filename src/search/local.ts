@@ -47,6 +47,10 @@ export async function localSearch(options: ISearchRequestOptions): Promise<ISear
       results,
       success: true,
     };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Local search error.';
+    process.stdout.write(msg);
+    throw err;
   } finally {
     await browserSearch.closeBrowser();
   }
