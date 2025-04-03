@@ -4,7 +4,7 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import  { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { ISearchRequestOptions, ISearchResponse, SearchProvider } from './interface.js';
-import { bingSearch, duckDuckGoSearch, searxngSearch, tavilySearch } from './search/index.js';
+import { bingSearch, duckDuckGoSearch, searxngSearch, tavilySearch, localSearch } from './search/index.js';
 import { SEARCH_TOOL, EXTRACT_TOOL, SCRAPE_TOOL, MAP_TOOL } from './tools.js';
 import FirecrawlApp, { MapParams, ScrapeParams } from '@mendable/firecrawl-js';
 import dotenvx from '@dotenvx/dotenvx';
@@ -282,6 +282,12 @@ async function processSearch(args: ISearchRequestOptions): Promise<ISearchRespon
         safeSearch: safeSearchOptions[safeSearch],
       });
     }
+    case 'local': {
+      return await localSearch({
+        ...searchDefaultConfig,
+        ...args,
+      });
+    }
     default:
       throw new Error(`Unsupported search provider: ${SEARCH_PROVIDER}`);
   }
@@ -414,8 +420,3 @@ runServer().catch((error) => {
 
 // export types
 export * from './interface.js';
-
-duckDuckGoSearch({
-  query: 'hello',
-  safeSearch: SafeSearchType.OFF,
-});

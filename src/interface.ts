@@ -12,6 +12,7 @@ export interface ISearchRequestOptions {
   categories?: string;
   format?: string;
   language?: string;
+  // search engines: bing,google,baidu
   engines?: string;
   // 0: off, 1: moderate, 2: strict
   safeSearch?: 0 | 1 | 2;
@@ -39,5 +40,5 @@ export interface ISearchResponse {
   success: boolean;
 }
 
-export type SearchProvider = 'searxng' | 'duckduckgo' | 'bing' | 'tavily';
+export type SearchProvider = 'searxng' | 'duckduckgo' | 'bing' | 'tavily' | 'local';
 export type SearchTimeRange = 'year' | 'month' | 'week' | 'day';

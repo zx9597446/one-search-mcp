@@ -7,6 +7,10 @@ A Model Context Protocol (MCP) server implementation that integrates with Searxn
 - Web Search, scrape, crawl and extract content from websites.
 - Support multiple search engines and web scrapers: **SearXNG**, **Firecrawl**, **Tavily**, **DuckDuckGo**, **Bing**, etc.
 - Support for self-hosted: SearXNG, Firecrawl, etc. (see [Deploy](./deploy/README.md))
+- **Local web search** (browser search), support multiple search engines: **Bing**, **Google**, **Baidu**, **Sogou**, etc.
+  - Use `puppeteer-core` to scrape content from websites.
+  - You should have a local browser installed, such as `Chromium`, `Google Chrome`, `Google Chrome Canary`, etc.
+  - Free, no keys required.
 - **Enabled tools:** `one_search`, `one_scrape`, `one_map`
 
 ## Installation
@@ -86,6 +90,10 @@ Add this to your `./codeium/windsurf/model_config.json` file:
 ## Self-host
 
 Local deployment of SearXNG and Firecrawl, please refer to [Deploy](./deploy/README.md)
+
+## Troubleshooting
+
+- [ReferenceError]: __name is not defined: This is because Puppeteer has problems with `tsx`, [esbuild#1031](https://github.com/evanw/esbuild/issues/1031)
 
 ## License
 

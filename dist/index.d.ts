@@ -35,7 +35,7 @@ interface ISearchResponse {
     results: ISearchResponseResult[];
     success: boolean;
 }
-type Provider = 'searxng' | 'duckduckgo' | 'bing' | 'tavily';
+type SearchProvider = 'searxng' | 'duckduckgo' | 'bing' | 'tavily' | 'local';
 type SearchTimeRange = 'year' | 'month' | 'week' | 'day';
 
-export type { IMediaItem, ISearchRequestOptions, ISearchResponse, ISearchResponseResult, Provider, SearchTimeRange };
+export type { IMediaItem, ISearchRequestOptions, ISearchResponse, ISearchResponseResult, SearchProvider, SearchTimeRange };
