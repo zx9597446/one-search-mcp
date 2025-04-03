@@ -15,7 +15,7 @@ dotenvx.config();
 // search api
 const SEARCH_API_URL = process.env.SEARCH_API_URL;
 const SEARCH_API_KEY = process.env.SEARCH_API_KEY;
-const SEARCH_PROVIDER: SearchProvider = process.env.SEARCH_PROVIDER as SearchProvider ?? 'searxng';
+const SEARCH_PROVIDER: SearchProvider = process.env.SEARCH_PROVIDER as SearchProvider ?? 'local';
 
 // search query params
 const SAFE_SEARCH = process.env.SAFE_SEARCH ?? 0;
