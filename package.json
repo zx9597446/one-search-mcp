@@ -84,7 +84,7 @@
     "typescript-eslint": "^7.0.0"
   },
   "dependencies": {
-    "@agent-infra/logger": "^0.0.2-beta.0",
+    "@agent-infra/logger": "0.0.1-beta.1",
     "@dotenvx/dotenvx": "^1.38.5",
     "@mendable/firecrawl-js": "^1.20.1",
     "@modelcontextprotocol/sdk": "^1.7.0",
